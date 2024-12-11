@@ -6,6 +6,10 @@ class AddDetailsInitialState extends AddDetailsStates {}
 
 class AddDetailsLoadingState extends AddDetailsStates {}
 
+class FetchDetailsLoadingState extends AddDetailsStates {}
+
+class FetchDetailsLoadedState extends AddDetailsStates {}
+
 class AddDetailsLoadedState extends AddDetailsStates {}
 
 class AddDetailsErrorState extends AddDetailsStates {

@@ -81,6 +81,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
                 }));
               } else if (state is AddDetailsLoadedState) {
                 Fluttertoast.showToast(msg: "Details uploaded Successfully");
+                context.read<AddDetailsBloc>().add(FetchEmployeeDetailsEvent());
+              } else if (state is FetchDetailsLoadedState) {
+                Fluttertoast.showToast(msg: "Details saved locally");
                 Navigator.pushReplacement(context,
                     MaterialPageRoute(builder: (context) {
                   return const HomePage();
@@ -88,7 +91,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
               }
             },
             builder: (context, state) {
-              if (state is AddDetailsLoadingState) {
+              if (state is AddDetailsLoadingState ||
+                  state is FetchDetailsLoadedState) {
                 return const Center(
                   child: CircularProgressIndicator(),
                 );

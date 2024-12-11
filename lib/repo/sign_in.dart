@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:get_it/get_it.dart';
+import 'package:trackme/model/user.dart';
 
 import '../config.dart';
 import '../utilities/logger.dart';
@@ -41,5 +41,20 @@ Future<void> createUser({
     await _dio.post("${UrlConfig.baseurl}/auth/register/", data: formData);
   } catch (e) {
     CustomLogger.error(e);
+  }
+}
+
+Future<UserModel> fetch(String empCode) async {
+  try {
+    final response = await _dio.get(
+        '${UrlConfig.baseurl}/employee/get?skip=0&limit=1&emp_code=$empCode');
+    if (response.data is List && response.data.isNotEmpty) {
+      return UserModel.fromJson(response.data[0]);
+    } else {
+      throw Exception("No user data found");
+    }
+  } catch (e) {
+    CustomLogger.error(e);
+    throw Exception("Failed to fetch user details: $e");
   }
 }

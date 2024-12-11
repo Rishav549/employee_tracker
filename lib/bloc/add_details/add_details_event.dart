@@ -26,3 +26,5 @@ class AddEmployeeDetailsEvent extends AddDetailsEvent {
       required this.image,
       required this.password});
 }
+
+class FetchEmployeeDetailsEvent extends AddDetailsEvent {}
