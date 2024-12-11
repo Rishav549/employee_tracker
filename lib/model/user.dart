@@ -1,38 +1,54 @@
+import 'package:file_picker/file_picker.dart';
+
 class UserModel {
-  final String qr;
+  final String empCode;
+  final String scanCode;
   final String macID;
-  final String name;
-  final String phoneNumber;
-  final String email;
-  final String designation;
+  final String empName;
+  final String empPhone;
+  final String empEmail;
+  final String empDesignation;
+  final String empPicture;
+  final String taggedImei;
+  final String password;
 
-  UserModel({
-    required this.qr,
-    required this.macID,
-    required this.name,
-    required this.phoneNumber,
-    required this.email,
-    required this.designation,
-  });
+  UserModel(
+      {required this.empCode,
+      required this.scanCode,
+      required this.macID,
+      required this.empName,
+      required this.empPhone,
+      required this.empEmail,
+      required this.empDesignation,
+      required this.empPicture,
+      required this.taggedImei,
+      required this.password});
 
-  factory UserModel.fromJson(Map<String, dynamic> json){
-    return UserModel(qr: json['qr'],
-        macID: json['macID'],
-        name: json['name'],
-        phoneNumber: json['phone_number'],
-        email: json['email'],
-        designation: json['designation']
-    );
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+        empCode: json['emp_code'],
+        scanCode: json['scan_code'],
+        macID: json['mac_id'],
+        empName: json['emp_name'],
+        empPhone: json['emp_phone'],
+        empEmail: json['emp_email'],
+        empDesignation: json['emp_designation'],
+        empPicture: json['emp_picture'],
+        taggedImei: json['tagged_imei'],
+        password: json['password']);
   }
 
   Map<String, dynamic> toJson() {
-    return{
-      'qr': qr,
-      'macID': macID,
-      'name': name,
-      'phone_number': phoneNumber,
-      'email': email,
-      'designation': designation
+    return {
+      'emp_code': empCode,
+      'scan_code': scanCode,
+      'mac_id': macID,
+      'emp_name': empName,
+      'emp_phone': empPhone,
+      'emp_email': empEmail,
+      'emp_designation': empDesignation,
+      'emp_picture': empPicture,
+      'tagged_imei': taggedImei,
     };
   }
 }
