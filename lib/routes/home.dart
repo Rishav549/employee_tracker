@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:trackme/components/heading.dart';
 import 'package:trackme/config.dart';
+import 'package:trackme/utilities/localStorage.dart';
+import 'package:trackme/utilities/logger.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,6 +14,22 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   double _buttonPosition = 0;
   bool _isButtonAtEnd = false;
+  String? image, name, designation, phone, email;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchImage();
+  }
+
+  void fetchImage() async {
+    image = await SecureLocalStorage.getValue("emp_picture");
+    name = await SecureLocalStorage.getValue("emp_name");
+    phone = await SecureLocalStorage.getValue("emp_phone");
+    designation = await SecureLocalStorage.getValue("emp_designation");
+    email = await SecureLocalStorage.getValue("emp_email");
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,23 +54,25 @@ class _HomePageState extends State<HomePage> {
                 ),
                 child: Column(
                   children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        // Match card corner radius
-                        topRight: Radius.circular(16),
-                      ),
-                      child: SizedBox(
-                        height: 400,
-                        child: Image.asset(
-                          AppImages.user,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    const Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 25.0, vertical: 16),
+                    image == null
+                        ? const CircularProgressIndicator()
+                        : ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              // Match card corner radius
+                              topRight: Radius.circular(16),
+                            ),
+                            child: SizedBox(
+                              height: 400,
+                              child: Image.network(
+                                '${UrlConfig.baseurl}/${image!.replaceAll('\\', '/')}',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 16),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -60,38 +80,38 @@ class _HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Text(
-                                "Arjun Patel",
-                                style: TextStyle(
+                                name == null ? '' : name!,
+                                style: const TextStyle(
                                     fontWeight: FontWeight.w500, fontSize: 24),
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 height: 6,
                               ),
                               Text(
-                                "Sales & Marketing",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w400, fontSize: 14),
+                                designation == null ? '' : designation!,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w400, fontSize: 12),
                               )
                             ],
                           ),
                           Column(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              SizedBox(
+                              const SizedBox(
                                 height: 6,
                               ),
                               Text(
-                                "+91 90736 97862",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w400, fontSize: 14),
+                                phone == null ? '' : phone!,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w400, fontSize: 12),
                               ),
-                              SizedBox(
-                                height: 10,
+                              const SizedBox(
+                                height: 14,
                               ),
                               Text(
-                                "example@gmail.com",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w400, fontSize: 14),
+                                email == null ? '' : email!,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w400, fontSize: 12),
                               )
                             ],
                           ),
