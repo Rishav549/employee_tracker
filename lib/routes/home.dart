@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:trackme/bloc/auth/auth_bloc.dart';
 import 'package:trackme/components/heading.dart';
 import 'package:trackme/config.dart';
@@ -17,11 +19,13 @@ class _HomePageState extends State<HomePage> {
   double _buttonPosition = 0;
   bool _isButtonAtEnd = false;
   String? image, name, designation, phone, email, password;
+  bool deviceFound = false;
 
   @override
   void initState() {
     super.initState();
     fetchImage();
+    scanForDevices();
   }
 
   void fetchImage() async {
@@ -32,6 +36,24 @@ class _HomePageState extends State<HomePage> {
     email = await SecureLocalStorage.getValue("emp_email");
     password = await SecureLocalStorage.getValue("password");
     setState(() {});
+  }
+
+  void scanForDevices() {
+    Fluttertoast.showToast(msg: "Scanning For Device, please Wait");
+    FlutterBluePlus.startScan();
+    FlutterBluePlus.scanResults.listen((results) {
+      setState(() {
+        for (ScanResult r in results) {
+          if (r.device.remoteId.toString() == 'E2:85:FA:64:8B:BF') {
+            Fluttertoast.showToast(msg: "Device Found");
+            setState(() {
+              deviceFound = true;
+            });
+            FlutterBluePlus.stopScan();
+          }
+        }
+      });
+    });
   }
 
   @override
@@ -144,94 +166,111 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(
                       height: 10,
                     ),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 60,
-                      child: Stack(
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            decoration: BoxDecoration(
-                              color: _isButtonAtEnd
-                                  ? Colors.red
-                                  : const Color(0xFF2A7D6B),
-                              borderRadius: BorderRadius.circular(30),
-                            ),
+                    !deviceFound
+                        ? SizedBox(
                             width: double.infinity,
                             height: 60,
-                            alignment: Alignment.center,
-                            child: _isButtonAtEnd
-                                ? const Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "Slide To Log Out",
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                      //timer field to be added Here
-                                    ],
-                                  )
-                                : const Text(
-                                    "Slide To Log In",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                          ),
-                          // Draggable button
-                          Positioned(
-                            left: _buttonPosition,
-                            top: 0,
-                            bottom: 0,
-                            child: GestureDetector(
-                              onHorizontalDragUpdate: (details) {
-                                setState(() {
-                                  _buttonPosition += details.delta.dx;
-                                  if (_buttonPosition < 0) _buttonPosition = 0;
-                                  if (_buttonPosition >
-                                      containerWidth - buttonDiameter) {
-                                    _buttonPosition =
-                                        containerWidth - buttonDiameter;
-                                    _isButtonAtEnd =
-                                        _buttonPosition >= triggerThreshold;
-                                    context.read<AuthBloc>().add(
-                                        AuthenticateUser(
-                                            email: email!,
-                                            password: password!));
-                                  } else {
-                                    _isButtonAtEnd = false;
-                                  }
-                                });
-                              },
-                              onHorizontalDragEnd: (details) {
-                                setState(() {
-                                  if (!_isButtonAtEnd) {
-                                    _buttonPosition = 0;
-                                  }
-                                });
-                              },
-                              child: ElevatedButton(
+                            child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  shape: const CircleBorder(),
-                                  padding: const EdgeInsets.all(15),
-                                  backgroundColor: Colors.white,
+                                  backgroundColor: Colors.grey,
                                 ),
                                 onPressed: () {},
-                                child: _isButtonAtEnd
-                                    ? const Icon(
-                                        Icons.chevron_left,
-                                        color: Colors.black,
-                                      )
-                                    : const Icon(
-                                        Icons.chevron_right,
-                                        color: Colors.black,
+                                child: const Text(
+                                  "Device Not Found",
+                                  style: TextStyle(color: Colors.white),
+                                )))
+                        : SizedBox(
+                            width: double.infinity,
+                            height: 60,
+                            child: Stack(
+                              children: [
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  decoration: BoxDecoration(
+                                    color: _isButtonAtEnd
+                                        ? Colors.red
+                                        : const Color(0xFF2A7D6B),
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  width: double.infinity,
+                                  height: 60,
+                                  alignment: Alignment.center,
+                                  child: _isButtonAtEnd
+                                      ? const Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              "Slide To Log Out",
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                            //timer field to be added Here
+                                          ],
+                                        )
+                                      : const Text(
+                                          "Slide To Log In",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                ),
+                                // Draggable button
+                                Positioned(
+                                  left: _buttonPosition,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: GestureDetector(
+                                    onHorizontalDragUpdate: (details) {
+                                      setState(() {
+                                        _buttonPosition += details.delta.dx;
+                                        if (_buttonPosition < 0) {
+                                          _buttonPosition = 0;
+                                        }
+                                        if (_buttonPosition >
+                                            containerWidth - buttonDiameter) {
+                                          _buttonPosition =
+                                              containerWidth - buttonDiameter;
+                                          _isButtonAtEnd = _buttonPosition >=
+                                              triggerThreshold;
+                                          context.read<AuthBloc>().add(
+                                              AuthenticateUser(
+                                                  email: email!,
+                                                  password: password!));
+                                        } else {
+                                          _isButtonAtEnd = false;
+                                        }
+                                      });
+                                    },
+                                    onHorizontalDragEnd: (details) {
+                                      setState(() {
+                                        if (!_isButtonAtEnd) {
+                                          _buttonPosition = 0;
+                                        }
+                                      });
+                                    },
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        shape: const CircleBorder(),
+                                        padding: const EdgeInsets.all(15),
+                                        backgroundColor: Colors.white,
                                       ),
-                              ),
+                                      onPressed: () {},
+                                      child: _isButtonAtEnd
+                                          ? const Icon(
+                                              Icons.chevron_left,
+                                              color: Colors.black,
+                                            )
+                                          : const Icon(
+                                              Icons.chevron_right,
+                                              color: Colors.black,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               );
