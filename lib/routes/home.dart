@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:trackme/bloc/auth/auth_bloc.dart';
 import 'package:trackme/components/heading.dart';
 import 'package:trackme/config.dart';
+import 'package:trackme/model/attendance.dart';
+import 'package:trackme/repo/attendance.dart';
 import 'package:trackme/utilities/localStorage.dart';
 import 'package:trackme/utilities/logger.dart';
 
@@ -20,6 +24,13 @@ class _HomePageState extends State<HomePage> {
   bool _isButtonAtEnd = false;
   String? image, name, designation, phone, email, password;
   bool deviceFound = false;
+  String? empID,
+      attendanceDate,
+      loginDateStamp,
+      loginLat,
+      loginLan,
+      logoutLat,
+      logoutLan;
 
   @override
   void initState() {
@@ -53,6 +64,43 @@ class _HomePageState extends State<HomePage> {
           }
         }
       });
+    });
+  }
+
+  Future<Position> _determinePosition() async {
+    CustomLogger.info("Function working");
+    bool serviceEnabled;
+    LocationPermission permission;
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+    return await Geolocator.getCurrentPosition();
+  }
+
+  void updateLocation(bool login) async {
+    Position position = await _determinePosition();
+    setState(() {
+      if (login) {
+        loginLat = position.latitude.toString();
+        loginLan = position.longitude.toString();
+      } else {
+        logoutLat = position.latitude.toString();
+        logoutLan = position.latitude.toString();
+      }
     });
   }
 
@@ -237,6 +285,14 @@ class _HomePageState extends State<HomePage> {
                                               AuthenticateUser(
                                                   email: email!,
                                                   password: password!));
+                                          empID = "7";
+                                          attendanceDate =
+                                              DateFormat('yyyy-MM-dd')
+                                                  .format(DateTime.now());
+                                          loginDateStamp =
+                                              DateFormat('yyyy-MM-dd HH:mm:ss')
+                                                  .format(DateTime.now());
+                                          updateLocation(true);
                                         } else {
                                           _isButtonAtEnd = false;
                                         }
@@ -248,6 +304,23 @@ class _HomePageState extends State<HomePage> {
                                           _buttonPosition = 0;
                                         }
                                       });
+                                      updateLocation(false);
+                                      CustomLogger.debug(
+                                          "$empID, $attendanceDate, $loginDateStamp, $loginLan, $loginLan, $logoutLat, $logoutLan");
+                                      AttendanceModel newData = AttendanceModel(
+                                          empId: "8",
+                                          attnDate: attendanceDate!,
+                                          loginDate: loginDateStamp!,
+                                          loginLat: loginLat!,
+                                          loginLan: loginLan!,
+                                          tagSignedIn: "E2:85:FA:64:8B:BF",
+                                          logoutDate:
+                                              DateFormat('yyyy-MM-dd HH:mm:ss')
+                                                  .format(DateTime.now()),
+                                          logoutLat: logoutLat!,
+                                          logoutLan: logoutLan!,
+                                          tagSignedOut: "E2:85:FA:64:8B:BF");
+                                      upload(newData);
                                     },
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
