@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -11,6 +13,9 @@ import 'package:trackme/model/attendance.dart';
 import 'package:trackme/repo/attendance.dart';
 import 'package:trackme/utilities/localStorage.dart';
 import 'package:trackme/utilities/logger.dart';
+
+import '../model/monitor.dart';
+import '../repo/monitor.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -31,6 +36,8 @@ class _HomePageState extends State<HomePage> {
       loginLan,
       logoutLat,
       logoutLan;
+  Timer? _timer;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -101,6 +108,35 @@ class _HomePageState extends State<HomePage> {
         logoutLat = position.latitude.toString();
         logoutLan = position.latitude.toString();
       }
+    });
+  }
+
+  void startPeriodicUpload(bool upload) {
+    if (upload && !_isUploading) {
+      setState(() {
+        _isUploading =true;
+      });
+      _timer = Timer.periodic(const Duration(seconds: 30), (timer) async {
+        updateLocation(true);
+        final monitorData = Monitor(
+          empId: 8,
+          timestamp: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+          lat: loginLat!,
+          lan: loginLan!,
+          tagScanned: 'E2:85:FA:64:8B:BF',
+        );
+
+        await uploadLog(monitorData);
+      });
+    } else {
+      _timer?.cancel();
+      _timer = null;
+    }
+  }
+
+  void stopUpload() {
+    setState(() {
+      _isUploading = false;
     });
   }
 
@@ -281,18 +317,22 @@ class _HomePageState extends State<HomePage> {
                                               containerWidth - buttonDiameter;
                                           _isButtonAtEnd = _buttonPosition >=
                                               triggerThreshold;
-                                          context.read<AuthBloc>().add(
-                                              AuthenticateUser(
-                                                  email: email!,
-                                                  password: password!));
-                                          empID = "7";
-                                          attendanceDate =
-                                              DateFormat('yyyy-MM-dd')
-                                                  .format(DateTime.now());
-                                          loginDateStamp =
-                                              DateFormat('yyyy-MM-dd HH:mm:ss')
-                                                  .format(DateTime.now());
-                                          updateLocation(true);
+                                          if(!_isUploading) {
+                                            context.read<AuthBloc>().add(
+                                                AuthenticateUser(
+                                                    email: email!,
+                                                    password: password!));
+                                            empID = "7";
+                                            attendanceDate =
+                                                DateFormat('yyyy-MM-dd')
+                                                    .format(DateTime.now());
+                                            loginDateStamp =
+                                                DateFormat(
+                                                    'yyyy-MM-dd HH:mm:ss')
+                                                    .format(DateTime.now());
+                                            updateLocation(true);
+                                            startPeriodicUpload(true);
+                                          }
                                         } else {
                                           _isButtonAtEnd = false;
                                         }
@@ -321,6 +361,8 @@ class _HomePageState extends State<HomePage> {
                                           logoutLan: logoutLan!,
                                           tagSignedOut: "E2:85:FA:64:8B:BF");
                                       upload(newData);
+                                      startPeriodicUpload(false);
+                                      stopUpload();
                                     },
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
