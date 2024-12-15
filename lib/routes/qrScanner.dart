@@ -11,9 +11,7 @@ import '../../components/textfield.dart';
 import '../utilities/logger.dart';
 
 class QrScanner extends StatefulWidget {
-
-  const QrScanner(
-      {super.key});
+  const QrScanner({super.key});
 
   @override
   State<QrScanner> createState() => _QrScannerState();
@@ -50,14 +48,14 @@ class _QrScannerState extends State<QrScanner> {
     });
   }
 
-  void handleRead(String qr) async{
+  void handleRead(String qr) async {
     cameraController.stop();
     setState(() {
-      _qrController.text=qr;
-      willRetake =true;
+      _qrController.text = qr;
+      willRetake = true;
     });
 
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context){
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
       return DetailsScreen(qr: _qrController.text, macId: "FF:F8:5F:0A:09:c2");
     }));
     // Navigator.push(context, MaterialPageRoute(builder: (context){
@@ -201,78 +199,74 @@ class _QrScannerState extends State<QrScanner> {
                       height: 10,
                     ),
                     CustomInputField(
-                        controller: _qrController, label: "QR Code")
+                        controller: _qrController, label: "QR Code"),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: SizedBox(
+                        height: 80.sp,
+                        width: double.infinity,
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 20,
+                            ),
+                            Expanded(
+                                child: MaterialButton(
+                              height: 50.sp,
+                              onPressed: () {
+                                if (willRetake) {
+                                  retake();
+                                } else {
+                                  Navigator.pop(context);
+                                }
+                              },
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(
+                                    color: Colors.white.withOpacity(0.2)),
+                                borderRadius: BorderRadius.circular(50.0),
+                              ),
+                              elevation: 0,
+                              color: Colors.grey.withOpacity(0.2),
+                              child: Text(
+                                willRetake ? "Retake" : "Cancel",
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            )),
+                            const SizedBox(
+                              width: 20,
+                            ),
+                            Expanded(
+                                child: MaterialButton(
+                              height: 50.sp,
+                              onPressed: () {
+                                if (_qrController.text.isNotEmpty) {
+                                  CustomLogger.debug(_qrController.text);
+                                  handleRead(_qrController.text);
+                                  //Navigator.pop(context, _qrController.text);
+                                }
+                              },
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(
+                                    color: Colors.white.withOpacity(0.2)),
+                                borderRadius: BorderRadius.circular(50.0),
+                              ),
+                              elevation: 0,
+                              color: Colors.black,
+                              child: const Text(
+                                "Save",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            )),
+                            const SizedBox(
+                              width: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
                   ],
                 ),
               )),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              const Text("Scan the QR on your Id", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 18),),
-              const SizedBox(height: 300,),
-              Image.asset(AppImages.lightning, width: 48,height: 48,),
-              const SizedBox(height: 200,),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: SizedBox(
-                  height: 80.sp,
-                  width: double.infinity,
-                  child: Row(
-                    children: [
-                      const SizedBox(
-                        width: 20,
-                      ),
-                      Expanded(
-                          child: MaterialButton(
-                            height: 50.sp,
-                            onPressed: () {
-                              if (willRetake) {
-                                retake();
-                              } else {
-                                Navigator.pop(context);
-                              }
-                            },
-                            shape: RoundedRectangleBorder(
-                              side: BorderSide(color: Colors.white.withOpacity(0.2)),
-                              borderRadius: BorderRadius.circular(50.0),
-                            ),
-                            elevation: 0,
-                            color: Colors.grey.withOpacity(0.2),
-                            child: Text(willRetake ? "Retake" : "Cancel", style: const TextStyle(color: Colors.white),),
-                          )),
-                      const SizedBox(
-                        width: 20,
-                      ),
-                      Expanded(
-                          child: MaterialButton(
-                            height: 50.sp,
-                            onPressed: () {
-                              if (_qrController.text.isNotEmpty) {
-                                CustomLogger.debug(_qrController.text);
-                                handleRead(_qrController.text);
-                                //Navigator.pop(context, _qrController.text);
-                              }
-                            },
-                            shape: RoundedRectangleBorder(
-                              side: BorderSide(color: Colors.white.withOpacity(0.2)),
-                              borderRadius: BorderRadius.circular(50.0),
-                            ),
-                            elevation: 0,
-                            color: Colors.black,
-                            child: const Text(
-                              "Save",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          )),
-                      const SizedBox(
-                        width: 20,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          )
         ],
       ),
     );
