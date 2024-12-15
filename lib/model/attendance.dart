@@ -24,7 +24,7 @@ class AttendanceModel {
 
   factory AttendanceModel.fromJson(Map<String, dynamic> json) {
     return AttendanceModel(
-      empId: json['emp_id'] as String,
+      empId: json['emp_id'],
       attnDate: json['attn_date'],
       loginDate: json['login_datestamp'],
       loginLat: json['login_lat'] as String,

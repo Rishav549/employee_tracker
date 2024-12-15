@@ -9,7 +9,11 @@ final Dio _dio = GetIt.I<Dio>();
 Future<void> upload(AttendanceModel data) async {
   try {
     await _dio.post("${UrlConfig.baseurl}/attendance/", data: data.toJson());
-  } catch (e) {
-    CustomLogger.error(e);
+  } on DioException catch (e) {
+    if (e.response?.statusCode == 422) {
+      CustomLogger.error("Unprocessable Entity: ${e.response?.data}");
+    } else {
+      CustomLogger.error("Unexpected error: ${e.message}");
+    }
   }
 }

@@ -50,6 +50,7 @@ class AddDetailsBloc extends Bloc<AddDetailsEvent, AddDetailsStates> {
     try {
       CustomLogger.debug(_empCode!);
       UserModel user = await fetch(_empCode!);
+      await SecureLocalStorage.setValue("emp_id", user.id.toString());
       await SecureLocalStorage.setValue("scan_code", user.scanCode);
       await SecureLocalStorage.setValue("mac_id", user.macID);
       await SecureLocalStorage.setValue("emp_code", user.empCode);

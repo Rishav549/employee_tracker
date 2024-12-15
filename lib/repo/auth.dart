@@ -12,8 +12,6 @@ Future<void> logIn(String email, String password) async {
       'password': password
     };
     await _dio.post('${UrlConfig.baseurl}/auth/login/', data: data);
-    CustomLogger.debug(
-        await _dio.post('${UrlConfig.baseurl}/auth/login/', data: data));
   } catch (e) {
     CustomLogger.error(e);
   }

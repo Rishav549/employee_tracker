@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 
 class UserModel {
+  final int id;
   final String empCode;
   final String scanCode;
   final String macID;
@@ -13,7 +14,8 @@ class UserModel {
   final String password;
 
   UserModel(
-      {required this.empCode,
+      {required this.id,
+      required this.empCode,
       required this.scanCode,
       required this.macID,
       required this.empName,
@@ -26,6 +28,7 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
+        id: json['id'],
         empCode: json['emp_code'],
         scanCode: json['scan_code'],
         macID: json['mac_id'],

@@ -12,7 +12,6 @@ import 'package:trackme/config.dart';
 import 'package:trackme/model/attendance.dart';
 import 'package:trackme/repo/attendance.dart';
 import 'package:trackme/utilities/localStorage.dart';
-import 'package:trackme/utilities/logger.dart';
 
 import '../model/monitor.dart';
 import '../repo/monitor.dart';
@@ -29,8 +28,8 @@ class _HomePageState extends State<HomePage> {
   bool _isButtonAtEnd = false;
   String? image, name, designation, phone, email, password;
   bool deviceFound = false;
-  String? empID,
-      attendanceDate,
+  int? empId;
+  String? attendanceDate,
       loginDateStamp,
       loginLat,
       loginLan,
@@ -47,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void fetchImage() async {
+    empId = int.parse(await SecureLocalStorage.getValue("emp_id"));
     image = await SecureLocalStorage.getValue("emp_picture");
     name = await SecureLocalStorage.getValue("emp_name");
     phone = await SecureLocalStorage.getValue("emp_phone");
@@ -75,7 +75,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<Position> _determinePosition() async {
-    CustomLogger.info("Function working");
     bool serviceEnabled;
     LocationPermission permission;
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -106,7 +105,7 @@ class _HomePageState extends State<HomePage> {
         loginLan = position.longitude.toString();
       } else {
         logoutLat = position.latitude.toString();
-        logoutLan = position.latitude.toString();
+        logoutLan = position.longitude.toString();
       }
     });
   }
@@ -114,12 +113,12 @@ class _HomePageState extends State<HomePage> {
   void startPeriodicUpload(bool upload) {
     if (upload && !_isUploading) {
       setState(() {
-        _isUploading =true;
+        _isUploading = true;
       });
       _timer = Timer.periodic(const Duration(seconds: 30), (timer) async {
         updateLocation(true);
         final monitorData = Monitor(
-          empId: 8,
+          empId: empId!,
           timestamp: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
           lat: loginLat!,
           lan: loginLan!,
@@ -317,19 +316,17 @@ class _HomePageState extends State<HomePage> {
                                               containerWidth - buttonDiameter;
                                           _isButtonAtEnd = _buttonPosition >=
                                               triggerThreshold;
-                                          if(!_isUploading) {
+                                          if (!_isUploading) {
                                             context.read<AuthBloc>().add(
                                                 AuthenticateUser(
                                                     email: email!,
                                                     password: password!));
-                                            empID = "7";
                                             attendanceDate =
                                                 DateFormat('yyyy-MM-dd')
                                                     .format(DateTime.now());
-                                            loginDateStamp =
-                                                DateFormat(
+                                            loginDateStamp = DateFormat(
                                                     'yyyy-MM-dd HH:mm:ss')
-                                                    .format(DateTime.now());
+                                                .format(DateTime.now());
                                             updateLocation(true);
                                             startPeriodicUpload(true);
                                           }
@@ -345,10 +342,8 @@ class _HomePageState extends State<HomePage> {
                                         }
                                       });
                                       updateLocation(false);
-                                      CustomLogger.debug(
-                                          "$empID, $attendanceDate, $loginDateStamp, $loginLan, $loginLan, $logoutLat, $logoutLan");
                                       AttendanceModel newData = AttendanceModel(
-                                          empId: "8",
+                                          empId: empId!.toString(),
                                           attnDate: attendanceDate!,
                                           loginDate: loginDateStamp!,
                                           loginLat: loginLat!,
