@@ -3,15 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_foreground_service/flutter_foreground_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:trackme/bloc/auth/auth_bloc.dart';
 import 'package:trackme/components/heading.dart';
 import 'package:trackme/config.dart';
 import 'package:trackme/model/attendance.dart';
 import 'package:trackme/repo/attendance.dart';
 import 'package:trackme/utilities/localStorage.dart';
+import 'package:trackme/utilities/logger.dart';
 
 import '../model/monitor.dart';
 import '../repo/monitor.dart';
@@ -26,7 +29,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   double _buttonPosition = 0;
   bool _isButtonAtEnd = false;
-  String? image, name, designation, phone, email, password;
+  String? image, name, designation, phone, email, password, scanCode, macID;
   bool deviceFound = false;
   int? empId;
   String? attendanceDate,
@@ -41,12 +44,45 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    checkLocationServices();
+    foregroundServices();
     fetchImage();
     scanForDevices();
   }
 
+  void foregroundServices() async {
+    ForegroundService().start();
+  }
+
+  Future<void> checkLocationServices() async {
+    bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!isLocationServiceEnabled) {
+      Fluttertoast.showToast(msg: "Please turn on location services.");
+      await Geolocator.openLocationSettings();
+    } else {
+      await requestLocationPermission();
+    }
+  }
+
+  Future<void> requestLocationPermission() async {
+    var status = await Permission.location.status;
+    CustomLogger.debug(status);
+    if (status.isDenied || status.isPermanentlyDenied) {
+      if (await Permission.location.request().isGranted) {
+        Fluttertoast.showToast(msg: "Location permission granted.");
+      } else {
+        Fluttertoast.showToast(
+            msg: "Location permission is required to use this app.");
+      }
+    } else if (status.isGranted) {
+      Fluttertoast.showToast(msg: "Location access is enabled.");
+    }
+  }
+
   void fetchImage() async {
     empId = int.parse(await SecureLocalStorage.getValue("emp_id"));
+    scanCode = await SecureLocalStorage.getValue("scan_code");
+    macID = await SecureLocalStorage.getValue("mac_id");
     image = await SecureLocalStorage.getValue("emp_picture");
     name = await SecureLocalStorage.getValue("emp_name");
     phone = await SecureLocalStorage.getValue("emp_phone");
@@ -57,20 +93,29 @@ class _HomePageState extends State<HomePage> {
   }
 
   void scanForDevices() {
-    Fluttertoast.showToast(msg: "Scanning For Device, please Wait");
-    FlutterBluePlus.startScan();
-    FlutterBluePlus.scanResults.listen((results) {
-      setState(() {
-        for (ScanResult r in results) {
-          if (r.device.remoteId.toString() == 'E2:85:FA:64:8B:BF') {
-            Fluttertoast.showToast(msg: "Device Found");
-            setState(() {
-              deviceFound = true;
-            });
-            FlutterBluePlus.stopScan();
-          }
-        }
-      });
+    Fluttertoast.showToast(msg: "Checking Bluetooth state...");
+    FlutterBluePlus.adapterState.listen((state) {
+      if (state == BluetoothAdapterState.on) {
+        Fluttertoast.showToast(msg: "Scanning For Device");
+        FlutterBluePlus.startScan();
+        FlutterBluePlus.scanResults.listen((results) {
+          setState(() {
+            for (ScanResult r in results) {
+              if (r.device.remoteId.toString() == macID) {
+                Fluttertoast.showToast(msg: "Device Found");
+                setState(() {
+                  deviceFound = true;
+                });
+                FlutterBluePlus.stopScan();
+                break;
+              }
+            }
+          });
+        });
+      } else if (state == BluetoothAdapterState.off) {
+        Fluttertoast.showToast(msg: "Turning Bluetooth on...");
+        FlutterBluePlus.turnOn();
+      }
     });
   }
 
@@ -115,16 +160,16 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _isUploading = true;
       });
-      _timer = Timer.periodic(const Duration(seconds: 30), (timer) async {
+      _timer = Timer.periodic(const Duration(minutes: 5), (timer) async {
         updateLocation(true);
         final monitorData = Monitor(
           empId: empId!,
           timestamp: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
           lat: loginLat!,
           lan: loginLan!,
-          tagScanned: 'E2:85:FA:64:8B:BF',
+          tagScanned: scanCode!,
         );
-
+        CustomLogger.debug(monitorData);
         await uploadLog(monitorData);
       });
     } else {
@@ -196,48 +241,56 @@ class _HomePageState extends State<HomePage> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        name == null ? '' : name!,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 24),
-                                      ),
-                                      const SizedBox(
-                                        height: 6,
-                                      ),
-                                      Text(
-                                        designation == null ? '' : designation!,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w400,
-                                            fontSize: 12),
-                                      )
-                                    ],
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name == null ? '' : name!,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 20),
+                                        ),
+                                        const SizedBox(
+                                          height: 6,
+                                        ),
+                                        Text(
+                                          designation == null
+                                              ? ''
+                                              : designation!,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: 12),
+                                        )
+                                      ],
+                                    ),
                                   ),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      const SizedBox(
-                                        height: 6,
-                                      ),
-                                      Text(
-                                        phone == null ? '' : phone!,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w400,
-                                            fontSize: 12),
-                                      ),
-                                      const SizedBox(
-                                        height: 14,
-                                      ),
-                                      Text(
-                                        email == null ? '' : email!,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w400,
-                                            fontSize: 12),
-                                      )
-                                    ],
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(
+                                          height: 6,
+                                        ),
+                                        Text(
+                                          phone == null ? '' : phone!,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: 12),
+                                        ),
+                                        const SizedBox(
+                                          height: 10,
+                                        ),
+                                        Text(
+                                          email == null ? '' : email!,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: 10),
+                                        )
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -348,13 +401,13 @@ class _HomePageState extends State<HomePage> {
                                           loginDate: loginDateStamp!,
                                           loginLat: loginLat!,
                                           loginLan: loginLan!,
-                                          tagSignedIn: "E2:85:FA:64:8B:BF",
+                                          tagSignedIn: scanCode!,
                                           logoutDate:
                                               DateFormat('yyyy-MM-dd HH:mm:ss')
                                                   .format(DateTime.now()),
                                           logoutLat: logoutLat!,
                                           logoutLan: logoutLan!,
-                                          tagSignedOut: "E2:85:FA:64:8B:BF");
+                                          tagSignedOut: scanCode!);
                                       upload(newData);
                                       startPeriodicUpload(false);
                                       stopUpload();

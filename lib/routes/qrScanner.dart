@@ -5,6 +5,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:trackme/components/heading.dart';
 import 'package:trackme/config.dart';
+import 'package:trackme/model/device.dart';
+import 'package:trackme/repo/device.dart';
 import 'package:trackme/routes/detailsScreen.dart';
 
 import '../../components/textfield.dart';
@@ -54,9 +56,10 @@ class _QrScannerState extends State<QrScanner> {
       _qrController.text = qr;
       willRetake = true;
     });
-
+    DeviceModel data = await getMacId(_qrController.text);
+    CustomLogger.debug(data.macId);
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
-      return DetailsScreen(qr: _qrController.text, macId: "FF:F8:5F:0A:09:c2");
+      return DetailsScreen(qr: _qrController.text, macId: data.macId);
     }));
     // Navigator.push(context, MaterialPageRoute(builder: (context){
     //   return DetailsScreen(qr: _qrController.text, macId: "FF:F8:5F:0A:09:c2");
