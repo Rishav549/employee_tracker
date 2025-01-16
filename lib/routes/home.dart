@@ -40,6 +40,7 @@ class _HomePageState extends State<HomePage> {
       logoutLan;
   Timer? _timer;
   bool _isUploading = false;
+  late StreamSubscription<Position> _positionStreamSubscription;
 
   @override
   void initState() {
@@ -144,14 +145,31 @@ class _HomePageState extends State<HomePage> {
 
   void updateLocation(bool login) async {
     Position position = await _determinePosition();
-    setState(() {
-      if (login) {
-        loginLat = position.latitude.toString();
-        loginLan = position.longitude.toString();
-      } else {
-        logoutLat = position.latitude.toString();
-        logoutLan = position.longitude.toString();
-      }
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: AndroidSettings(
+          accuracy: LocationAccuracy.high,  // Set desired accuracy
+          distanceFilter: 100, // Optional: filter updates based on distance change
+          forceLocationManager: true,
+          intervalDuration: const Duration(seconds: 10),
+          //(Optional) Set foreground notification config to keep the app alive
+          //when going to the background
+          foregroundNotificationConfig: const ForegroundNotificationConfig(
+            notificationText:
+            "Example app will continue to receive your location even when you aren't using it",
+            notificationTitle: "Running in Background",
+            enableWakeLock: true,
+          )
+      ),
+    ).listen((Position position) {
+      setState(() {
+        if (login) {
+          loginLat = position.latitude.toString();
+          loginLan = position.longitude.toString();
+        } else {
+          logoutLat = position.latitude.toString();
+          logoutLan = position.longitude.toString();
+        }
+      });
     });
   }
 
@@ -160,7 +178,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _isUploading = true;
       });
-      _timer = Timer.periodic(const Duration(minutes: 5), (timer) async {
+      _timer = Timer.periodic(const Duration(seconds: 30), (timer) async {
         updateLocation(true);
         final monitorData = Monitor(
           empId: empId!,
