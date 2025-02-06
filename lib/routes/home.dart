@@ -178,7 +178,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _isUploading = true;
       });
-      _timer = Timer.periodic(const Duration(seconds: 30), (timer) async {
+      _timer = Timer.periodic(const Duration(minutes: 1), (timer) async {
         updateLocation(true);
         final monitorData = Monitor(
           empId: empId!,

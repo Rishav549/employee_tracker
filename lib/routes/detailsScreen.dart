@@ -84,10 +84,10 @@ class _DetailsScreenState extends State<DetailsScreen> {
                 context.read<AddDetailsBloc>().add(FetchEmployeeDetailsEvent());
               } else if (state is FetchDetailsLoadedState) {
                 Fluttertoast.showToast(msg: "Details saved locally");
-                Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (context) {
-                  return const HomePage();
-                }));
+                  Navigator.pushReplacement(context,
+                      MaterialPageRoute(builder: (context) {
+                    return const HomePage();
+                  }));
               }
             },
             builder: (context, state) {
@@ -125,12 +125,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
                                       child: TextField(
                                         controller: codeController,
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.bold),
+                                            fontWeight: FontWeight.normal),
                                         decoration: const InputDecoration(
                                             hintText: "001",
                                             hintStyle: TextStyle(
                                               fontWeight: FontWeight
-                                                  .bold, // Bold text for hint
+                                                  .normal, // Bold text for hint
                                             ),
                                             suffixIcon:
                                                 Icon(Icons.person_2_outlined),
@@ -163,7 +163,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                                             hintText: "Arjun Patel",
                                             hintStyle: TextStyle(
                                               fontWeight: FontWeight
-                                                  .bold, // Bold text for hint
+                                                  .normal, // Bold text for hint
                                             ),
                                             suffixIcon:
                                                 Icon(Icons.person_2_outlined),
@@ -193,10 +193,10 @@ class _DetailsScreenState extends State<DetailsScreen> {
                                         style: const TextStyle(
                                             fontWeight: FontWeight.bold),
                                         decoration: const InputDecoration(
-                                            hintText: "+91 90736 97862",
+                                            hintText: "90736 97862",
                                             hintStyle: TextStyle(
                                               fontWeight: FontWeight
-                                                  .bold, // Bold text for hint
+                                                  .normal, // Bold text for hint
                                             ),
                                             suffixIcon:
                                                 Icon(Icons.call_outlined),
@@ -229,7 +229,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                                             hintText: "example@gmail.com",
                                             hintStyle: TextStyle(
                                               fontWeight: FontWeight
-                                                  .bold, // Bold text for hint
+                                                  .normal, // Bold text for hint
                                             ),
                                             suffixIcon:
                                                 Icon(Icons.email_outlined),
@@ -262,7 +262,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                                             hintText: "Sales & Marketing",
                                             hintStyle: TextStyle(
                                               fontWeight: FontWeight
-                                                  .bold, // Bold text for hint
+                                                  .normal, // Bold text for hint
                                             ),
                                             suffixIcon:
                                                 Icon(Icons.work_outline),
@@ -296,7 +296,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                                             hintText: "********",
                                             hintStyle: const TextStyle(
                                               fontWeight: FontWeight
-                                                  .bold, // Bold text for hint
+                                                  .normal, // Bold text for hint
                                             ),
                                             suffixIcon: IconButton(
                                                 onPressed: () {
