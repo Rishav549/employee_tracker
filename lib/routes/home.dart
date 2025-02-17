@@ -49,6 +49,7 @@ class _HomePageState extends State<HomePage> {
     foregroundServices();
     fetchImage();
     scanForDevices();
+    disableBatteryOptimization();
   }
 
   void foregroundServices() async {
@@ -91,6 +92,24 @@ class _HomePageState extends State<HomePage> {
     email = await SecureLocalStorage.getValue("emp_email");
     password = await SecureLocalStorage.getValue("password");
     setState(() {});
+  }
+
+  Future<void> disableBatteryOptimization() async {
+    bool isIgnoringBatteryOptimizations = await Permission.ignoreBatteryOptimizations.isGranted;
+
+    if (!isIgnoringBatteryOptimizations) {
+      var status = await Permission.ignoreBatteryOptimizations.request();
+      if (status.isGranted) {
+        Fluttertoast.showToast(msg: "Battery optimization disabled for this app.");
+      } else if (status.isPermanentlyDenied) {
+        Fluttertoast.showToast(msg: "Please disable battery optimization manually in settings.");
+        openAppSettings();
+      } else {
+        Fluttertoast.showToast(msg: "Battery optimization permission denied.");
+      }
+    } else {
+      Fluttertoast.showToast(msg: "Battery optimization is already disabled for this app.");
+    }
   }
 
   void scanForDevices() {
