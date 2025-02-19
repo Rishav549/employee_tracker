@@ -113,6 +113,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void scanForDevices() {
+    FlutterBluePlus.turnOn();
     Fluttertoast.showToast(msg: "Checking Bluetooth state...");
     FlutterBluePlus.adapterState.listen((state) {
       if (state == BluetoothAdapterState.on) {
@@ -132,9 +133,6 @@ class _HomePageState extends State<HomePage> {
             }
           });
         });
-      } else if (state == BluetoothAdapterState.off) {
-        Fluttertoast.showToast(msg: "Turning Bluetooth on...");
-        FlutterBluePlus.turnOn();
       }
     });
   }
@@ -429,8 +427,10 @@ class _HomePageState extends State<HomePage> {
                                       setState(() {
                                         if (!_isButtonAtEnd) {
                                           _buttonPosition = 0;
+                                          deviceFound=false;
                                         }
                                       });
+                                      scanForDevices();
                                       updateLocation(false);
                                       AttendanceModel newData = AttendanceModel(
                                           empId: empId!.toString(),
