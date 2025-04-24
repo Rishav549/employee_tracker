@@ -13,6 +13,7 @@ import 'package:trackme/components/heading.dart';
 import 'package:trackme/config.dart';
 import 'package:trackme/model/attendance.dart';
 import 'package:trackme/repo/attendance.dart';
+import 'package:trackme/repo/fetchImage.dart';
 import 'package:trackme/utilities/localStorage.dart';
 import 'package:trackme/utilities/logger.dart';
 
@@ -82,10 +83,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   void fetchImage() async {
+    image = await fetchImageURL();
     empId = int.parse(await SecureLocalStorage.getValue("emp_id"));
     scanCode = await SecureLocalStorage.getValue("scan_code");
     macID = await SecureLocalStorage.getValue("mac_id");
-    image = await SecureLocalStorage.getValue("emp_picture");
     name = await SecureLocalStorage.getValue("emp_name");
     phone = await SecureLocalStorage.getValue("emp_phone");
     designation = await SecureLocalStorage.getValue("emp_designation");
@@ -95,20 +96,24 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> disableBatteryOptimization() async {
-    bool isIgnoringBatteryOptimizations = await Permission.ignoreBatteryOptimizations.isGranted;
+    bool isIgnoringBatteryOptimizations =
+        await Permission.ignoreBatteryOptimizations.isGranted;
 
     if (!isIgnoringBatteryOptimizations) {
       var status = await Permission.ignoreBatteryOptimizations.request();
       if (status.isGranted) {
-        Fluttertoast.showToast(msg: "Battery optimization disabled for this app.");
+        Fluttertoast.showToast(
+            msg: "Battery optimization disabled for this app.");
       } else if (status.isPermanentlyDenied) {
-        Fluttertoast.showToast(msg: "Please disable battery optimization manually in settings.");
+        Fluttertoast.showToast(
+            msg: "Please disable battery optimization manually in settings.");
         openAppSettings();
       } else {
         Fluttertoast.showToast(msg: "Battery optimization permission denied.");
       }
     } else {
-      Fluttertoast.showToast(msg: "Battery optimization is already disabled for this app.");
+      Fluttertoast.showToast(
+          msg: "Battery optimization is already disabled for this app.");
     }
   }
 
@@ -164,19 +169,20 @@ class _HomePageState extends State<HomePage> {
     Position position = await _determinePosition();
     _positionStreamSubscription = Geolocator.getPositionStream(
       locationSettings: AndroidSettings(
-          accuracy: LocationAccuracy.high,  // Set desired accuracy
-          distanceFilter: 100, // Optional: filter updates based on distance change
+          accuracy: LocationAccuracy.high,
+          // Set desired accuracy
+          distanceFilter: 100,
+          // Optional: filter updates based on distance change
           forceLocationManager: true,
           intervalDuration: const Duration(seconds: 10),
           //(Optional) Set foreground notification config to keep the app alive
           //when going to the background
           foregroundNotificationConfig: const ForegroundNotificationConfig(
             notificationText:
-            "Example app will continue to receive your location even when you aren't using it",
+                "Example app will continue to receive your location even when you aren't using it",
             notificationTitle: "Running in Background",
             enableWakeLock: true,
-          )
-      ),
+          )),
     ).listen((Position position) {
       setState(() {
         if (login) {
@@ -264,7 +270,7 @@ class _HomePageState extends State<HomePage> {
                                     child: SizedBox(
                                       height: 400,
                                       child: Image.network(
-                                        '${UrlConfig.baseurl}/${image!.replaceAll('\\', '/')}',
+                                        image!,
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -427,7 +433,7 @@ class _HomePageState extends State<HomePage> {
                                       setState(() {
                                         if (!_isButtonAtEnd) {
                                           _buttonPosition = 0;
-                                          deviceFound=false;
+                                          deviceFound = false;
                                         }
                                       });
                                       scanForDevices();
