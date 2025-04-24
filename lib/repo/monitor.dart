@@ -4,11 +4,16 @@ import 'package:trackme/config.dart';
 import 'package:trackme/model/monitor.dart';
 import 'package:trackme/utilities/logger.dart';
 
+import '../utilities/localStorage.dart';
+
 final Dio _dio = GetIt.I<Dio>();
 
 Future<void> uploadLog(Monitor data) async {
   try {
-    await _dio.post("${UrlConfig.baseurl}/monitor/", data: data.toJson());
+    String token = await SecureLocalStorage.getValue("Access_Token");
+    await _dio.post("${UrlConfig.baseurl}/monitor/",
+        data: data.toJson(),
+        options: Options(headers: {"Authorization": token}));
   } catch (e) {
     CustomLogger.error(e);
   }
