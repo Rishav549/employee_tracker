@@ -9,9 +9,9 @@ final Dio _dio =  GetIt.I<Dio>();
 
 Future<DeviceModel> getMacId(String scanCode) async{
   try{
-    Response response = await _dio.get("${UrlConfig.baseurl}/device/get?skip=0&limit=1&scan_code=$scanCode");
-    if (response.data is List && response.data.isNotEmpty) {
-      return DeviceModel.fromJson(response.data[0]);
+    Response response = await _dio.get("${UrlConfig.baseurl}/device?scan_code=$scanCode");
+    if (response.data!=null && response.data.isNotEmpty) {
+      return DeviceModel.fromJson(response.data);
     } else {
       throw Exception("QR Not Registered");
     }

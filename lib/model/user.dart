@@ -11,7 +11,6 @@ class UserModel {
   final String empDesignation;
   final String empPicture;
   final String taggedImei;
-  final String password;
 
   UserModel(
       {required this.id,
@@ -23,22 +22,21 @@ class UserModel {
       required this.empEmail,
       required this.empDesignation,
       required this.empPicture,
-      required this.taggedImei,
-      required this.password});
+      required this.taggedImei});
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-        id: json['id'],
-        empCode: json['emp_code'],
-        scanCode: json['scan_code'],
-        macID: json['mac_id'],
-        empName: json['emp_name'],
-        empPhone: json['emp_phone'],
-        empEmail: json['emp_email'],
-        empDesignation: json['emp_designation'],
-        empPicture: json['emp_picture'],
-        taggedImei: json['tagged_imei'],
-        password: json['password']);
+      id: json['id'],
+      empCode: json['emp_code'],
+      scanCode: json['scan_code'],
+      macID: json['mac_id'],
+      empName: json['emp_name'],
+      empPhone: json['emp_phone'],
+      empEmail: json['emp_email'],
+      empDesignation: json['emp_designation'],
+      empPicture: json['emp_picture'],
+      taggedImei: json['tagged_imei'],
+    );
   }
 
   Map<String, dynamic> toJson() {
