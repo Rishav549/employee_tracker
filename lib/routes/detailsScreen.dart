@@ -1,10 +1,10 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:trackme/bloc/add_details/add_details_bloc.dart';
 import 'package:trackme/components/heading.dart';
-import 'package:trackme/repo/sign_in.dart';
 import 'package:trackme/routes/home.dart';
 import 'package:trackme/routes/qrScanner.dart';
 import 'package:trackme/utilities/logger.dart';
@@ -26,6 +26,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
   TextEditingController emailController = TextEditingController();
   TextEditingController designationController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
+  String androidId = "";
   bool obText = true;
   PlatformFile? _image;
 
@@ -47,6 +48,19 @@ class _DetailsScreenState extends State<DetailsScreen> {
     } catch (e) {
       print('Error picking files: $e');
     }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    fetchImei();
+  }
+
+  void fetchImei() async{
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+    androidId = androidInfo.id;
   }
 
   @override
@@ -385,7 +399,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                                                   empDesignation:
                                                       designationController
                                                           .text,
-                                                  taggedImei: "23750327509",
+                                                  taggedImei: androidId,
                                                   image: _image,
                                                   password:
                                                       passwordController.text));
