@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mime/mime.dart';
 import 'package:trackme/model/user.dart';
+import 'package:trackme/repo/auth.dart';
 import 'package:trackme/utilities/localStorage.dart';
 
 import '../config.dart';
@@ -47,16 +48,9 @@ Future<void> createUser({
       'password': password,
       if (multipartImage != null) 'emp_picture': multipartImage,
     });
-
     await _dio.post("${UrlConfig.baseurl}/auth/register", data: formData);
-  }on DioException catch (e) {
-    // Log the error details
-    CustomLogger.error('DioException: ${e.message}');
-    CustomLogger.error('Response data: ${e.response?.data}');
-    CustomLogger.error('Status code: ${e.response?.statusCode}');
-    CustomLogger.error('Headers: ${e.response?.headers}');
-  } catch (e) {
-
+    await logIn(email, password);
+  }catch (e) {
     CustomLogger.error(e);
   }
 }
