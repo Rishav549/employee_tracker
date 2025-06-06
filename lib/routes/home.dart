@@ -46,15 +46,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    checkLocationServices();
     foregroundServices();
     fetchImage();
-    scanForDevices();
-    disableBatteryOptimization();
   }
 
   void foregroundServices() async {
     ForegroundService().start();
+    checkLocationServices();
   }
 
   Future<void> checkLocationServices() async {
@@ -73,11 +71,15 @@ class _HomePageState extends State<HomePage> {
     if (status.isDenied || status.isPermanentlyDenied) {
       if (await Permission.location.request().isGranted) {
         Fluttertoast.showToast(msg: "Location permission granted.");
+        await disableBatteryOptimization();
+        scanForDevices();
       } else {
         Fluttertoast.showToast(
             msg: "Location permission is required to use this app.");
       }
     } else if (status.isGranted) {
+      await disableBatteryOptimization();
+      scanForDevices();
       Fluttertoast.showToast(msg: "Location access is enabled.");
     }
   }
