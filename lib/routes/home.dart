@@ -57,9 +57,13 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> checkLocationServices() async {
     bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
+    CustomLogger.info(isLocationServiceEnabled);
     if (!isLocationServiceEnabled) {
+      CustomLogger.info("Executes");
       Fluttertoast.showToast(msg: "Please turn on location services.");
       await Geolocator.openLocationSettings();
+      await Future.delayed(Duration(seconds: 2));
+      await requestLocationPermission();
     } else {
       await requestLocationPermission();
     }
@@ -69,7 +73,8 @@ class _HomePageState extends State<HomePage> {
     var status = await Permission.location.status;
     CustomLogger.debug(status);
     if (status.isDenied || status.isPermanentlyDenied) {
-      if (await Permission.location.request().isGranted) {
+      var check = await Permission.location.request();
+      if (check.isGranted) {
         Fluttertoast.showToast(msg: "Location permission granted.");
         await disableBatteryOptimization();
         scanForDevices();
