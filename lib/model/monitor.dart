@@ -1,6 +1,6 @@
 class Monitor {
   final int empId;
-  final String timestamp;
+  final DateTime timestamp;
   final String lat;
   final String lan;
   final String tagScanned;
@@ -15,7 +15,7 @@ class Monitor {
   factory Monitor.fromJson(Map<String, dynamic> json) {
     return Monitor(
         empId: json['emp_id'] as int,
-        timestamp: json['Timestamp'] as String,
+        timestamp: json['Timestamp'],
         lat: json['lat'] as String,
         lan: json['lan'] as String,
         tagScanned: json['tag_scanned'] as String);
@@ -24,7 +24,7 @@ class Monitor {
   Map<String, dynamic> toJson() {
     return {
       'emp_id': empId,
-      'Timestamp': timestamp,
+      'Timestamp': timestamp.toIso8601String(),
       'lat': lat,
       'lan': lan,
       'tag_scanned': tagScanned

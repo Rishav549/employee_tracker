@@ -1,11 +1,11 @@
 class AttendanceModel {
   final String empId;
   final String attnDate;
-  final String loginDate;
+  final DateTime loginDate;
   final String loginLat;
   final String loginLan;
   final String tagSignedIn;
-  final String logoutDate;
+  final DateTime logoutDate;
   final String logoutLat;
   final String logoutLan;
   final String tagSignedOut;
@@ -41,11 +41,11 @@ class AttendanceModel {
     return {
       'emp_id': empId,
       'attn_date': attnDate,
-      'login_datestamp': loginDate,
+      'login_datestamp': loginDate.toIso8601String(),
       'login_lat': loginLat,
       'login_lan': loginLan,
       'tag_scanned_in': tagSignedIn,
-      'logout_datestamp': logoutDate,
+      'logout_datestamp': logoutDate.toIso8601String(),
       'logout_lat': logoutLat,
       'logout_lan': logoutLan,
       'tag_scanned_out': tagSignedOut,

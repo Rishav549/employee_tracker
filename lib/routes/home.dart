@@ -33,12 +33,8 @@ class _HomePageState extends State<HomePage> {
   String? image, name, designation, phone, email, password, scanCode, macID;
   bool deviceFound = false;
   int? empId;
-  String? attendanceDate,
-      loginDateStamp,
-      loginLat,
-      loginLan,
-      logoutLat,
-      logoutLan;
+  DateTime? loginDateStamp;
+  String? attendanceDate, loginLat, loginLan, logoutLat, logoutLan;
   Timer? _timer;
   bool _isUploading = false;
   late StreamSubscription<Position> _positionStreamSubscription;
@@ -212,12 +208,12 @@ class _HomePageState extends State<HomePage> {
         updateLocation(true);
         final monitorData = Monitor(
           empId: empId!,
-          timestamp: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+          timestamp: DateTime.now().toUtc(),
           lat: loginLat!,
           lan: loginLan!,
           tagScanned: scanCode!,
         );
-        CustomLogger.debug(monitorData);
+        CustomLogger.debug(monitorData.timestamp);
         await uploadLog(monitorData);
       });
     } else {
@@ -425,9 +421,8 @@ class _HomePageState extends State<HomePage> {
                                             attendanceDate =
                                                 DateFormat('yyyy-MM-dd')
                                                     .format(DateTime.now());
-                                            loginDateStamp = DateFormat(
-                                                    'yyyy-MM-dd HH:mm:ss')
-                                                .format(DateTime.now());
+                                            loginDateStamp =
+                                                DateTime.now().toUtc();
                                             updateLocation(true);
                                             startPeriodicUpload(true);
                                           }
@@ -452,12 +447,11 @@ class _HomePageState extends State<HomePage> {
                                           loginLat: loginLat!,
                                           loginLan: loginLan!,
                                           tagSignedIn: scanCode!,
-                                          logoutDate:
-                                              DateFormat('yyyy-MM-dd HH:mm:ss')
-                                                  .format(DateTime.now()),
+                                          logoutDate: DateTime.now().toUtc(),
                                           logoutLat: logoutLat!,
                                           logoutLan: logoutLan!,
                                           tagSignedOut: scanCode!);
+                                      CustomLogger.info("${newData.loginDate}, ${newData.logoutDate}");
                                       upload(newData);
                                       startPeriodicUpload(false);
                                       stopUpload();
