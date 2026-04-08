@@ -24,18 +24,6 @@ Future<void> createUser({
   PlatformFile? image,
 }) async {
   try {
-    MultipartFile? multipartImage;
-
-    if (image != null) {
-      final mimeType = lookupMimeType(image.path!);
-      final fileName = image.path!.split('/').last;
-
-      multipartImage = await MultipartFile.fromFile(
-        image.path!,
-        filename: fileName,
-        contentType: mimeType != null ? DioMediaType.parse(mimeType!) : null,
-      );
-    }
     final formData = FormData.fromMap({
       'scan_code': qr,
       'mac_id': macId,
@@ -46,9 +34,13 @@ Future<void> createUser({
       'emp_designation': designation,
       'tagged_imei': taggedIMEI,
       'password': password,
-      if (multipartImage != null) 'emp_picture': multipartImage,
+      if (image != null)
+        'emp_picture': await MultipartFile.fromFile(
+          image.path!,
+          filename: image.name,
+        ),
     });
-    await _dio.post("${UrlConfig.baseurl}/auth/register", data: formData);
+    await _dio.post("${UrlConfig.baseurl}/auth/register/", data: formData);
     await logIn(email, password);
   }catch (e) {
     CustomLogger.error(e);
@@ -59,9 +51,9 @@ Future<UserModel> fetch(String empCode) async {
   try {
     CustomLogger.info(empCode);
     final response = await _dio.get(
-        '${UrlConfig.baseurl}/auth/$empCode');
+        '${UrlConfig.baseurl}/employee/get?skip=0&limit=1&emp_code=$empCode');
     if (response.data!=null && response.data.isNotEmpty) {
-      return UserModel.fromJson(response.data);
+      return UserModel.fromJson(response.data[0]);
     } else {
       throw Exception("No user data found");
     }

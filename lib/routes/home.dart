@@ -1,9 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:flutter_foreground_service/flutter_foreground_service.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
@@ -13,12 +14,9 @@ import 'package:trackme/components/heading.dart';
 import 'package:trackme/config.dart';
 import 'package:trackme/model/attendance.dart';
 import 'package:trackme/repo/attendance.dart';
-import 'package:trackme/repo/fetchImage.dart';
 import 'package:trackme/utilities/localStorage.dart';
 import 'package:trackme/utilities/logger.dart';
-
-import '../model/monitor.dart';
-import '../repo/monitor.dart';
+import '../services/taskHandler.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -35,39 +33,48 @@ class _HomePageState extends State<HomePage> {
   int? empId;
   DateTime? loginDateStamp;
   String? attendanceDate, loginLat, loginLan, logoutLat, logoutLan;
-  Timer? _timer;
   bool _isUploading = false;
   late StreamSubscription<Position> _positionStreamSubscription;
 
   @override
   void initState() {
     super.initState();
+    _stopServiceIfRunning();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestPermissions();
+      _initService();
+    });
     foregroundServices();
     fetchImage();
   }
 
+  Future<void> _stopServiceIfRunning() async {
+    bool isRunning = await FlutterForegroundTask.isRunningService;
+    if (isRunning) {
+      await FlutterForegroundTask.stopService();
+      CustomLogger.debug("Stopped old running service");
+    }
+  }
+
   void foregroundServices() async {
-    ForegroundService().start();
     checkLocationServices();
   }
 
   Future<void> checkLocationServices() async {
     bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
-    CustomLogger.info(isLocationServiceEnabled);
     if (!isLocationServiceEnabled) {
       CustomLogger.info("Executes");
       Fluttertoast.showToast(msg: "Please turn on location services.");
       await Geolocator.openLocationSettings();
-      await Future.delayed(Duration(seconds: 2));
-      await requestLocationPermission();
-    } else {
-      await requestLocationPermission();
+      while (!await Geolocator.isLocationServiceEnabled()) {
+        await Future.delayed(const Duration(seconds: 2));
+      }
     }
+    await requestLocationPermission();
   }
 
   Future<void> requestLocationPermission() async {
     var status = await Permission.location.status;
-    CustomLogger.debug(status);
     if (status.isDenied || status.isPermanentlyDenied) {
       var check = await Permission.location.request();
       if (check.isGranted) {
@@ -86,12 +93,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   void fetchImage() async {
-    image = await fetchImageURL();
     empId = int.parse(await SecureLocalStorage.getValue("emp_id"));
     scanCode = await SecureLocalStorage.getValue("scan_code");
     macID = await SecureLocalStorage.getValue("mac_id");
     name = await SecureLocalStorage.getValue("emp_name");
     phone = await SecureLocalStorage.getValue("emp_phone");
+    image = await SecureLocalStorage.getValue("emp_picture");
     designation = await SecureLocalStorage.getValue("emp_designation");
     email = await SecureLocalStorage.getValue("emp_email");
     password = await SecureLocalStorage.getValue("password");
@@ -101,6 +108,8 @@ class _HomePageState extends State<HomePage> {
   Future<void> disableBatteryOptimization() async {
     bool isIgnoringBatteryOptimizations =
         await Permission.ignoreBatteryOptimizations.isGranted;
+
+    _requestPermissions();
 
     if (!isIgnoringBatteryOptimizations) {
       var status = await Permission.ignoreBatteryOptimizations.request();
@@ -118,6 +127,46 @@ class _HomePageState extends State<HomePage> {
       Fluttertoast.showToast(
           msg: "Battery optimization is already disabled for this app.");
     }
+  }
+
+  Future<void> _requestPermissions() async {
+    final NotificationPermission notificationPermission =
+    await FlutterForegroundTask.checkNotificationPermission();
+    if (notificationPermission != NotificationPermission.granted) {
+      await FlutterForegroundTask.requestNotificationPermission();
+    }
+
+    if (Platform.isAndroid) {
+      if (!await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
+        await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+      }
+      if (!await FlutterForegroundTask.canScheduleExactAlarms) {
+        await FlutterForegroundTask.openAlarmsAndRemindersSettings();
+      }
+    }
+  }
+
+  void _initService() {
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'foreground_service',
+        channelName: 'Foreground Service Notification',
+        channelDescription:
+        'This notification appears when the foreground service is running.',
+        onlyAlertOnce: true,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: false,
+        playSound: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.repeat(5000),
+        autoRunOnBoot: false,
+        autoRunOnMyPackageReplaced: false,
+        allowWakeLock: true,
+        allowWifiLock: true,
+      ),
+    );
   }
 
   void scanForDevices() {
@@ -168,65 +217,61 @@ class _HomePageState extends State<HomePage> {
     return await Geolocator.getCurrentPosition();
   }
 
-  void updateLocation(bool login) async {
-    Position position = await _determinePosition();
-    _positionStreamSubscription = Geolocator.getPositionStream(
-      locationSettings: AndroidSettings(
-          accuracy: LocationAccuracy.high,
-          // Set desired accuracy
-          distanceFilter: 100,
-          // Optional: filter updates based on distance change
-          forceLocationManager: true,
-          intervalDuration: const Duration(seconds: 10),
-          //(Optional) Set foreground notification config to keep the app alive
-          //when going to the background
-          foregroundNotificationConfig: const ForegroundNotificationConfig(
-            notificationText:
-                "Example app will continue to receive your location even when you aren't using it",
-            notificationTitle: "Running in Background",
-            enableWakeLock: true,
-          )),
-    ).listen((Position position) {
-      setState(() {
-        if (login) {
-          loginLat = position.latitude.toString();
-          loginLan = position.longitude.toString();
-        } else {
-          logoutLat = position.latitude.toString();
-          logoutLan = position.longitude.toString();
-        }
-      });
-    });
-  }
+  // Future<void> updateLocation(bool login) async {
+  //   Position position = await _determinePosition();
+  //   _positionStreamSubscription = Geolocator.getPositionStream(
+  //     locationSettings: AndroidSettings(
+  //         accuracy: LocationAccuracy.high,
+  //         distanceFilter: 100,
+  //         forceLocationManager: true,
+  //         intervalDuration: const Duration(seconds: 10),
+  //         foregroundNotificationConfig: const ForegroundNotificationConfig(
+  //           notificationText:
+  //               "Example app will continue to receive your location even when you aren't using it",
+  //           notificationTitle: "Running in Background",
+  //           enableWakeLock: true,
+  //         )),
+  //   ).listen((Position position) {
+  //     setState(() {
+  //       if (login) {
+  //         loginLat = position.latitude.toString();
+  //         loginLan = position.longitude.toString();
+  //       } else {
+  //         logoutLat = position.latitude.toString();
+  //         logoutLan = position.longitude.toString();
+  //       }
+  //     });
+  //   });
+  // }
 
-  void startPeriodicUpload(bool upload) {
-    if (upload && !_isUploading) {
-      setState(() {
-        _isUploading = true;
-      });
-      _timer = Timer.periodic(const Duration(minutes: 1), (timer) async {
-        updateLocation(true);
-        final monitorData = Monitor(
-          empId: empId!,
-          timestamp: DateTime.now().toUtc(),
-          lat: loginLat!,
-          lan: loginLan!,
-          tagScanned: scanCode!,
-        );
-        CustomLogger.debug(monitorData.timestamp);
-        await uploadLog(monitorData);
-      });
-    } else {
-      _timer?.cancel();
-      _timer = null;
-    }
-  }
-
-  void stopUpload() {
-    setState(() {
-      _isUploading = false;
-    });
-  }
+  // void startPeriodicUpload(bool upload) {
+  //   if (upload && !_isUploading) {
+  //     setState(() {
+  //       _isUploading = true;
+  //     });
+  //     _timer = Timer.periodic(const Duration(minutes: 1), (timer) async {
+  //       updateLocation(true);
+  //       final monitorData = Monitor(
+  //         empId: empId!,
+  //         timestamp: DateTime.now().toUtc(),
+  //         lat: loginLat!,
+  //         lan: loginLan!,
+  //         tagScanned: scanCode!,
+  //       );
+  //       CustomLogger.debug(monitorData.timestamp);
+  //       await uploadLog(monitorData);
+  //     });
+  //   } else {
+  //     _timer?.cancel();
+  //     _timer = null;
+  //   }
+  // }
+  //
+  // void stopUpload() {
+  //   setState(() {
+  //     _isUploading = false;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +318,7 @@ class _HomePageState extends State<HomePage> {
                                     child: SizedBox(
                                       height: 400,
                                       child: Image.network(
-                                        image!,
+                                        '${UrlConfig.baseurl}/${image!.replaceAll('\\', '/')}',
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -401,8 +446,7 @@ class _HomePageState extends State<HomePage> {
                                   top: 0,
                                   bottom: 0,
                                   child: GestureDetector(
-                                    onHorizontalDragUpdate: (details) {
-                                      setState(() {
+                                    onHorizontalDragUpdate: (details) async{
                                         _buttonPosition += details.delta.dx;
                                         if (_buttonPosition < 0) {
                                           _buttonPosition = 0;
@@ -423,15 +467,22 @@ class _HomePageState extends State<HomePage> {
                                                     .format(DateTime.now());
                                             loginDateStamp =
                                                 DateTime.now().toUtc();
-                                            updateLocation(true);
-                                            startPeriodicUpload(true);
+                                            Position position = await _determinePosition();
+                                            loginLat = position.latitude.toString();
+                                            loginLan = position.longitude.toString();
+                                            //startPeriodicUpload(true);
+                                            await FlutterForegroundTask.startService(
+                                              notificationTitle: 'Tracking Active',
+                                              notificationText: 'Location tracking running...',
+                                              callback: startCallback,
+                                            );
                                           }
                                         } else {
                                           _isButtonAtEnd = false;
                                         }
-                                      });
+                                        setState(() {});
                                     },
-                                    onHorizontalDragEnd: (details) {
+                                    onHorizontalDragEnd: (details) async{
                                       setState(() {
                                         if (!_isButtonAtEnd) {
                                           _buttonPosition = 0;
@@ -439,7 +490,9 @@ class _HomePageState extends State<HomePage> {
                                         }
                                       });
                                       scanForDevices();
-                                      updateLocation(false);
+                                      Position position = await _determinePosition();
+                                      logoutLat = position.latitude.toString();
+                                      logoutLan = position.longitude.toString();
                                       AttendanceModel newData = AttendanceModel(
                                           empId: empId!.toString(),
                                           attnDate: attendanceDate!,
@@ -451,10 +504,13 @@ class _HomePageState extends State<HomePage> {
                                           logoutLat: logoutLat!,
                                           logoutLan: logoutLan!,
                                           tagSignedOut: scanCode!);
-                                      CustomLogger.info("${newData.loginDate}, ${newData.logoutDate}");
                                       upload(newData);
-                                      startPeriodicUpload(false);
-                                      stopUpload();
+                                      //startPeriodicUpload(false);
+                                      FlutterForegroundTask.sendDataToTask("stop");
+                                      await FlutterForegroundTask.stopService();
+                                      bool isRunning = await FlutterForegroundTask.isRunningService;
+                                      CustomLogger.debug("Service running: $isRunning");
+                                      //stopUpload();
                                     },
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(

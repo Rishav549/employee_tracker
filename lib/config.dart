@@ -6,5 +6,6 @@ class AppImages {
 
 class UrlConfig {
   //static String baseurl = "http://172.105.36.66:8006";
-  static String baseurl = "http://172.105.51.188:6759";
+  //static String baseurl = "http://172.105.51.188:6759";
+  static String baseurl = "http://172.105.61.24:8006";
 }

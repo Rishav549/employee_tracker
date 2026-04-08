@@ -10,10 +10,11 @@ final Dio _dio = GetIt.I<Dio>();
 
 Future<void> upload(AttendanceModel data) async {
   try {
-    String token = await SecureLocalStorage.getValue("Access_Token");
+    //String token = await SecureLocalStorage.getValue("Access_Token");
     await _dio.post("${UrlConfig.baseurl}/attendance/",
         data: data.toJson(),
-        options: Options(headers: {"Authorization": token}));
+        //options: Options(headers: {"Authorization": token})
+    );
   } catch (e) {
     CustomLogger.error(e);
   }

@@ -9,9 +9,10 @@ final Dio _dio = GetIt.I<Dio>();
 
 Future<String> fetchImageURL() async {
   try {
-    String token = await SecureLocalStorage.getValue("Access_Token");
+    //String token = await SecureLocalStorage.getValue("Access_Token");
     Response response = await _dio.get("${UrlConfig.baseurl}/auth/image",
-        options: Options(headers: {"Authorization": token}));
+        //options: Options(headers: {"Authorization": token})
+    );
     CustomLogger.debug(response.data["url"]);
     return response.data["url"];
   } catch (e) {
